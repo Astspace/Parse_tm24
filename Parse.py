@@ -1,3 +1,5 @@
+import csv
+
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -41,10 +43,33 @@ for category_name, category_href in all_categories.items():
             if item in category_name:
                 category_name = category_name.replace(item, "_")
 
-        req = requests.get(url="https://telemarket24.ru/catalog/telefony_i_smartfony/", headers=headers)
-        src = req.text
+        # req = requests.get(url=category_href, headers=headers)
+        # src = req.text
+        #
+        # with open(f"data/{count}_{category_name}.html", "w", encoding="utf-8") as file:
+        #     file.write(src)
 
-        with open(f"data/{count}_{category_name}.html", "w", encoding="utf-8") as file:
-            file.write(src)
+        with open(f"data/{count}_{category_name}.html", encoding="utf-8") as file:
+            src = file.read()
+
+        soup = BeautifulSoup(src, "lxml")
+        product = soup.find(class_="main-data")
+        product_name = product.find(class_="name").text.strip()
+        product_availability = product.find(class_="info-tag").find("span").text.strip()
+        product_price = product.find(class_="price").find(class_="value").text.strip()
+        product_link = "https://telemarket24.ru" + product.find(class_="name").find("a").get("href")
+        print(product_link)
+        print(product)
+
+        with open(f"data/{count}_{category_name}.csv", "w") as file:
+            writer = csv.writer(file)
+            writer.writerow(
+                (
+                    "Наименование товара",
+                    "Наличие товара",
+                    "Стоимость товара, руб.",
+                    "Ссылка на товар"
+                )
+            )
 
         count += 1
