@@ -14,13 +14,13 @@ headers = {
 }
 # req = requests.get(url, headers=headers)
 # src = req.text
-
+#
 # with open ("index.html", "w", encoding="utf-8") as file:
 #    file.write(src)
 
 with open("index.html", encoding="utf-8") as file:
     src = file.read()
-#
+
 # soup = BeautifulSoup(src, "lxml")
 # all_category = soup.find_all(class_="menu-lvl0-link")
 # all_category_dict = {}
@@ -49,41 +49,43 @@ for category_name, category_href in all_categories.items():
         if not os.path.exists(f"data/{count}_{category_name}"):
             os.mkdir(f"data/{count}_{category_name}")
 
-
         soup = BeautifulSoup(src, "lxml")
 
         all_subcategories_data = soup.find(class_="catalog-menu-lvl1-wrap").find_all(class_="catalog-menu-lvl1")
+        count_sub = 0
         for subcategory_data in all_subcategories_data:
-            subcategory_name = subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").find("span").text.strip()
-            subcategory_link = "https://telemarket24.ru" + subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").get("href")
-            print(subcategory_data.ul.find_all("li"))
-            for item in subcategory_data.ul.find_all("li"):
-                item_name = item.text.strip()
-                item_link = "https://telemarket24.ru" + item.get("href")
+            if count_sub == 0:
+                subcategory_name = subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").find("span").text.strip()
+                subcategory_link = "https://telemarket24.ru" + subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").get("href")
+                for item in subcategory_data.ul.find_all("a"):
+                    item_name = item.text.strip()
+                    item_link = "https://telemarket24.ru" + item.get("href")
 
-                # req = requests.get(item_link, headers=headers)
-                # src = req.text
-                #
-                # with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
-                #     file.write(src)
+                    # req = requests.get(item_link, headers=headers)
+                    # src = req.text
 
-                with open(f"data/{count}_{category_name}/{item_name}.html", encoding="utf-8") as file:
-                    src = file.read()
+                    # with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
+                    #     file.write(src)
 
-                soup = BeautifulSoup(src, "lxml")
+                    with open(f"data/{count}_{category_name}/{item_name}.html", encoding="utf-8") as file:
+                        src = file.read()
 
-                product = soup.find(class_="main-data")
-                product_name = product.find(class_="name").text.strip()
-                product_availability = product.find(class_="info-tag").find("span").text.strip()
-                product_price = product.find(class_="price").find(class_="value").text.strip()
+                    soup = BeautifulSoup(src, "lxml")
 
-                file = Workbook()
-                sheet = file.active
-                sheet["A1"] = "Наименование товара"
-                sheet["B1"] = "Наличие товара, ед."
-                sheet["C1"] = "Стоимость товара,руб."
-                sheet["D1"] = "Ссылка на товар"
-                sheet.append([product_name, product_availability, product_price, item_link])
-                file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
+                    product = soup.find(class_="main-data")
+                    product_name = product.find(class_="name").text.strip()
+                    product_availability = product.find(class_="info-tag").find("span").text.strip()
+                    product_price = product.find(class_="price").find(class_="value").text.strip()
+
+                    excel_file = Workbook()
+                    excel_sheet = excel_file.active
+                    excel_sheet["A1"] = "Наименование товара"
+                    excel_sheet["B1"] = "Наличие товара, ед."
+                    excel_sheet["C1"] = "Стоимость товара,руб."
+                    excel_sheet["D1"] = "Ссылка на товар"
+                    excel_sheet.append([product_name, product_availability, product_price, item_link])
+                    excel_sheet.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
+
+                    count_sub += 1
 
         count += 1
