@@ -43,8 +43,8 @@ for category_name, category_href in all_categories.items():
             if item in category_name:
                 category_name = category_name.replace(item, "_")
 
-        # req = requests.get(url=category_href, headers=headers)
-        # src = req.text
+        req = requests.get(url=category_href, headers=headers)
+        src = req.text
 
         if not os.path.exists(f"data/{count}_{category_name}"):
             os.mkdir(f"data/{count}_{category_name}")
@@ -53,26 +53,37 @@ for category_name, category_href in all_categories.items():
         soup = BeautifulSoup(src, "lxml")
 
         all_subcategories_data = soup.find(class_="catalog-menu-lvl1-wrap").find_all(class_="catalog-menu-lvl1")
-        count_subcategoty = 0
         for subcategory_data in all_subcategories_data:
-            if count_subcategoty == 0:
-                subcategory_name = subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").find("span").text.strip()
-                count_subcategoty += 1
-                print(subcategory_name)
+            subcategory_name = subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").find("span").text.strip()
+            subcategory_link = "https://telemarket24.ru" + subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").get("href")
+            print(subcategory_data.ul.find_all("li"))
+            for item in subcategory_data.ul.find_all("li"):
+                item_name = item.text.strip()
+                item_link = "https://telemarket24.ru" + item.get("href")
 
-        product = soup.find(class_="main-data")
-        product_name = product.find(class_="name").text.strip()
-        product_availability = product.find(class_="info-tag").find("span").text.strip()
-        product_price = product.find(class_="price").find(class_="value").text.strip()
-        product_link = "https://telemarket24.ru" + product.find(class_="name").find("a").get("href")
+                # req = requests.get(item_link, headers=headers)
+                # src = req.text
+                #
+                # with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
+                #     file.write(src)
 
-        file = Workbook()
-        sheet = file.active
-        sheet["A1"] = "Наименование товара"
-        sheet["B1"] = "Наличие товара, ед."
-        sheet["C1"] = "Стоимость товара,руб."
-        sheet["D1"] = "Ссылка на товар"
-        # sheet.append([product_name, product_availability, product_price, product_link])
-        # file.save(filename=f"data/{count}_{category_name}.xlsx")
+                with open(f"data/{count}_{category_name}/{item_name}.html", encoding="utf-8") as file:
+                    src = file.read()
+
+                soup = BeautifulSoup(src, "lxml")
+
+                product = soup.find(class_="main-data")
+                product_name = product.find(class_="name").text.strip()
+                product_availability = product.find(class_="info-tag").find("span").text.strip()
+                product_price = product.find(class_="price").find(class_="value").text.strip()
+
+                file = Workbook()
+                sheet = file.active
+                sheet["A1"] = "Наименование товара"
+                sheet["B1"] = "Наличие товара, ед."
+                sheet["C1"] = "Стоимость товара,руб."
+                sheet["D1"] = "Ссылка на товар"
+                sheet.append([product_name, product_availability, product_price, item_link])
+                file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
 
         count += 1
