@@ -49,6 +49,9 @@ for category_name, category_href in all_categories.items():
         if not os.path.exists(f"data/{count}_{category_name}"):
             os.mkdir(f"data/{count}_{category_name}")
 
+        excel_file = Workbook()
+        excel_sheet = excel_file.active
+
         soup = BeautifulSoup(src, "lxml")
 
         all_subcategories_data = soup.find(class_="catalog-menu-lvl1-wrap").find_all(class_="catalog-menu-lvl1")
@@ -57,13 +60,16 @@ for category_name, category_href in all_categories.items():
             if count_sub == 0:
                 subcategory_name = subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").find("span").text.strip()
                 subcategory_link = "https://telemarket24.ru" + subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").get("href")
-                for item in subcategory_data.ul.find_all("a"):
+                subcategory_item_data = subcategory_data.ul.find_all("a")
+                len_item = len(subcategory_item_data)
+                count_item = 0
+                for item in subcategory_item_data:
                     item_name = item.text.strip()
                     item_link = "https://telemarket24.ru" + item.get("href")
 
                     # req = requests.get(item_link, headers=headers)
                     # src = req.text
-
+                    #
                     # with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
                     #     file.write(src)
 
@@ -77,15 +83,20 @@ for category_name, category_href in all_categories.items():
                     product_availability = product.find(class_="info-tag").find("span").text.strip()
                     product_price = product.find(class_="price").find(class_="value").text.strip()
 
-                    excel_file = Workbook()
-                    excel_sheet = excel_file.active
                     excel_sheet["A1"] = "Наименование товара"
                     excel_sheet["B1"] = "Наличие товара, ед."
                     excel_sheet["C1"] = "Стоимость товара,руб."
                     excel_sheet["D1"] = "Ссылка на товар"
+
+                    if count_item == 0:
+                        print(f"--- ЗАПОЛНЯЕМ ФАЙЛ {category_name}/{subcategory_name}--- \nЗаголовки добавлены.")
                     excel_sheet.append([product_name, product_availability, product_price, item_link])
-                    excel_sheet.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
+                    print(f"     Добавлен товар: || {product_name}")
+                    excel_file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
+                    if count_item + 1 == len_item:
+                        print(f"*** ФАЙЛ {category_name}/{subcategory_name} CОХРАНЕН ***")
 
-                    count_sub += 1
+                    count_item += 1
 
+                count_sub += 1
         count += 1
