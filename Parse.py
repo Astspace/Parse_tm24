@@ -14,7 +14,7 @@ headers = {
 }
 # req = requests.get(url, headers=headers)
 # src = req.text
-
+#
 # with open("index.html", "w", encoding="utf-8") as file:
 #    file.write(src)
 
@@ -37,87 +37,68 @@ with open("all_category_dict.json") as file:
 
 count = 0
 for category_name, category_href in all_categories.items():
-    if count < 2:
-        rep = [",", " ", "-"]
-        for char in rep:
-            if char in category_name:
-                category_name = category_name.replace(char, "_")
+    rep = [",", " ", "-"]
+    for char in rep:
+        if char in category_name:
+            category_name = category_name.replace(char, "_")
 
-        req = requests.get(url=category_href, headers=headers)
-        src = req.text
+    req = requests.get(url=category_href, headers=headers)
+    req.encoding = "utf-8"
+    src = req.text
 
-        if not os.path.exists(f"data/{count}_{category_name}"):
-            os.mkdir(f"data/{count}_{category_name}")
+    if not os.path.exists(f"data/{count}_{category_name}"):
+        os.mkdir(f"data/{count}_{category_name}")
 
-        soup = BeautifulSoup(src, "lxml")
+    soup = BeautifulSoup(src, "lxml")
 
-        all_subcategories_data = soup.find(class_="catalog-menu-lvl1-wrap").find_all(class_="catalog-menu-lvl1")
-        count_sub = 0
-        for subcategory_data in all_subcategories_data[0:2]:
-            #if count_sub == 0:
-            subcategory_name = subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").find("span").text.strip()
-            subcategory_link = "https://telemarket24.ru" + subcategory_data.find(class_="menu-lvl1-header").find(class_="menu-lvl1-link").get("href")
-            count_item = 0
+    all_subcategories_data = soup.find_all(class_="catalog-menu-lvl0-item no-numbers")[count].find_all(class_="catalog-menu-lvl1")
+    count_sub = 0
+    for subcategory_data in all_subcategories_data:
+        #if count_sub == 0:
+        subcategory_name = subcategory_data.find(class_="menu-lvl1-link").text.strip()
+        subcategory_link = "https://telemarket24.ru" + subcategory_data.find(class_="menu-lvl1-link").get("href")
+        count_item = 0
 
-            excel_file = Workbook()
-            excel_sheet = excel_file.active
+        excel_file = Workbook()
+        excel_sheet = excel_file.active
 
-            excel_sheet["A1"] = "Наименование товара"
-            excel_sheet["B1"] = "Наличие товара, ед."
-            excel_sheet["C1"] = "Стоимость товара,руб."
-            excel_sheet["D1"] = "Ссылка на товар"
+        excel_sheet["A1"] = "Наименование товара"
+        excel_sheet["B1"] = "Наличие товара, ед."
+        excel_sheet["C1"] = "Стоимость товара,руб."
+        excel_sheet["D1"] = "Ссылка на товар"
 
-            print(f"--- ЗАПОЛНЯЕМ ФАЙЛ {category_name}/{subcategory_name}--- \nЗаголовки добавлены.")
-            if subcategory_data.ul != None:
-                item_data = subcategory_data.ul.find_all("a")
-                len_item = len(item_data)
-                for item in item_data:
-                    item_name = item.text.strip()
-                    item_link = "https://telemarket24.ru" + item.get("href")
+        print(f"--- ЗАПОЛНЯЕМ ФАЙЛ {category_name}/{subcategory_name}--- \nЗаголовки добавлены.")
+        if subcategory_data.ul != None:
+            item_data = subcategory_data.ul.find_all("a")
+            len_item = len(item_data)
+            for item in item_data:
+                item_name = item.text.strip()
+                item_link = "https://telemarket24.ru" + item.get("href")
 
-                    req = requests.get(item_link, headers=headers)
-                    src = req.text
-
-                    with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
-                        file.write(src)
-
-                    with open(f"data/{count}_{category_name}/{item_name}.html", encoding="utf-8") as file:
-                        src = file.read()
-
-                    excel_sheet.append([item_name])
-                    print(f"++ Категория (заголовок) {item_name} раздела {subcategory_name} добавлена.")
-
-                    soup = BeautifulSoup(src, "lxml")
-
-                    all_products = soup.find_all(class_="main-data")
-                    count_product = 0
-                    len_products = len(all_products)
-                    for product in all_products:
-                        product_name = product.find(class_="name").text.strip()
-                        if product.find(class_="info-tag tovar_availability") != None:
-                            product_availability = product.find(class_="info-tag tovar_availability").find("span").text.strip()
-                        else:
-                            product_availability = "Нет в наличии"
-                        product_price = product.find(class_="price").find(class_="value").text.strip()
-                        product_link = "https://telemarket24.ru" + product.find(class_="name").find("a").get("href")
-
-                        excel_sheet.append([product_name, product_availability, product_price, product_link])
-                        print(f"     Добавлен товар: || {product_name}")
-                        excel_file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
-                        count_product += 1
-                    count_item += 1
-                    if count_item == len_item and count_product == len_products:
-                        print(f"*** ФАЙЛ {category_name}/{subcategory_name} CОХРАНЕН ***")
-            else:
-                req = requests.get(url=subcategory_link, headers=headers)
+                req = requests.get(item_link, headers=headers)
+                req.encoding = "utf-8"
                 src = req.text
+
+                # with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
+                #     file.write(src)
+                #
+                # with open(f"data/{count}_{category_name}/{item_name}.html", encoding="utf-8") as file:
+                #     src = file.read()
+
+                excel_sheet.append([item_name])
+                print(f"++ Категория (заголовок) {item_name} раздела {subcategory_name} добавлена.")
+
                 soup = BeautifulSoup(src, "lxml")
+
                 all_products = soup.find_all(class_="main-data")
                 count_product = 0
                 len_products = len(all_products)
                 for product in all_products:
                     product_name = product.find(class_="name").text.strip()
-                    product_availability = product.find(class_="info-tag tovar_availability").find("span").text.strip()
+                    if product.find(class_="info-tag tovar_availability") != None:
+                        product_availability = product.find(class_="info-tag tovar_availability").find("span").text.strip()
+                    else:
+                        product_availability = "Нет в наличии"
                     product_price = product.find(class_="price").find(class_="value").text.strip()
                     product_link = "https://telemarket24.ru" + product.find(class_="name").find("a").get("href")
 
@@ -125,10 +106,31 @@ for category_name, category_href in all_categories.items():
                     print(f"     Добавлен товар: || {product_name}")
                     excel_file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
                     count_product += 1
-                if count_product == len_products:
+                count_item += 1
+                if count_item == len_item and count_product == len_products:
                     print(f"*** ФАЙЛ {category_name}/{subcategory_name} CОХРАНЕН ***")
+        else:
+            req = requests.get(url=subcategory_link, headers=headers)
+            req.encoding = "utf-8"
+            src = req.text
+            soup = BeautifulSoup(src, "lxml")
+            all_products = soup.find_all(class_="main-data")
+            count_product = 0
+            len_products = len(all_products)
+            for product in all_products:
+                product_name = product.find(class_="name").text.strip()
+                product_availability = product.find(class_="info-tag tovar_availability").find("span").text.strip()
+                product_price = product.find(class_="price").find(class_="value").text.strip()
+                product_link = "https://telemarket24.ru" + product.find(class_="name").find("a").get("href")
 
-            count_sub += 1
-        count += 1
-        print(f"----------\nВСЕ ФАЙЛЫ КАТЕГОРИИ {category_name} СОХРАНЕНЫ!\n----------\n\n")
+                excel_sheet.append([product_name, product_availability, product_price, product_link])
+                print(f"     Добавлен товар: || {product_name}")
+                excel_file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
+                count_product += 1
+            if count_product == len_products:
+                print(f"*** ФАЙЛ {category_name}/{subcategory_name} CОХРАНЕН ***")
+
+        count_sub += 1
+    count += 1
+    print(f"----------\nВСЕ ФАЙЛЫ КАТЕГОРИИ {category_name} СОХРАНЕНЫ!\n----------\n\n")
 print("РАБОТА ПРОГРАММЫ ЗАКОНЧЕНА!")
