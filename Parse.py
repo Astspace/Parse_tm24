@@ -7,16 +7,16 @@ import os
 
 http.client._MAXHEADERS = 100000
 
-# url = "https://telemarket24.ru/catalog/"
+url = "https://telemarket24.ru/catalog/"
 headers = {
     "Accept": "*/*",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
 }
-# req = requests.get(url, headers=headers)
-# src = req.text
-#
-# with open("index.html", "w", encoding="utf-8") as file:
-#    file.write(src)
+req = requests.get(url, headers=headers)
+src = req.text
+
+with open("index.html", "w", encoding="utf-8") as file:
+   file.write(src)
 
 with open("index.html", encoding="utf-8") as file:
     src = file.read()
@@ -43,7 +43,6 @@ for category_name, category_href in all_categories.items():
             category_name = category_name.replace(char, "_")
 
     req = requests.get(url=category_href, headers=headers)
-    req.encoding = "utf-8"
     src = req.text
 
     if not os.path.exists(f"data/{count}_{category_name}"):
@@ -56,6 +55,8 @@ for category_name, category_href in all_categories.items():
     for subcategory_data in all_subcategories_data:
         #if count_sub == 0:
         subcategory_name = subcategory_data.find(class_="menu-lvl1-link").text.strip()
+        if "/" in subcategory_name:
+            subcategory_name = subcategory_name.replace("/", "_")
         subcategory_link = "https://telemarket24.ru" + subcategory_data.find(class_="menu-lvl1-link").get("href")
         count_item = 0
 
@@ -76,14 +77,13 @@ for category_name, category_href in all_categories.items():
                 item_link = "https://telemarket24.ru" + item.get("href")
 
                 req = requests.get(item_link, headers=headers)
-                req.encoding = "utf-8"
                 src = req.text
 
-                # with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
-                #     file.write(src)
-                #
-                # with open(f"data/{count}_{category_name}/{item_name}.html", encoding="utf-8") as file:
-                #     src = file.read()
+                with open(f"data/{count}_{category_name}/{item_name}.html", "w", encoding="utf-8") as file:
+                    file.write(src)
+
+                with open(f"data/{count}_{category_name}/{item_name}.html", encoding="utf-8") as file:
+                    src = file.read()
 
                 excel_sheet.append([item_name])
                 print(f"++ Категория (заголовок) {item_name} раздела {subcategory_name} добавлена.")
@@ -103,7 +103,10 @@ for category_name, category_href in all_categories.items():
                     product_link = "https://telemarket24.ru" + product.find(class_="name").find("a").get("href")
 
                     excel_sheet.append([product_name, product_availability, product_price, product_link])
-                    print(f"     Добавлен товар: || {product_name}")
+                    try:
+                        print(f"     Добавлен товар: || {product_name}")
+                    except UnicodeEncodeError:
+                        print("Добавлен очередной товар (наименование не отображается из-за кодировки")
                     excel_file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
                     count_product += 1
                 count_item += 1
@@ -111,7 +114,6 @@ for category_name, category_href in all_categories.items():
                     print(f"*** ФАЙЛ {category_name}/{subcategory_name} CОХРАНЕН ***")
         else:
             req = requests.get(url=subcategory_link, headers=headers)
-            req.encoding = "utf-8"
             src = req.text
             soup = BeautifulSoup(src, "lxml")
             all_products = soup.find_all(class_="main-data")
@@ -119,12 +121,18 @@ for category_name, category_href in all_categories.items():
             len_products = len(all_products)
             for product in all_products:
                 product_name = product.find(class_="name").text.strip()
-                product_availability = product.find(class_="info-tag tovar_availability").find("span").text.strip()
+                if product.find(class_="info-tag tovar_availability") != None:
+                    product_availability = product.find(class_="info-tag tovar_availability").find("span").text.strip()
+                else:
+                    product_availability = "Нет в наличии"
                 product_price = product.find(class_="price").find(class_="value").text.strip()
                 product_link = "https://telemarket24.ru" + product.find(class_="name").find("a").get("href")
 
                 excel_sheet.append([product_name, product_availability, product_price, product_link])
-                print(f"     Добавлен товар: || {product_name}")
+                try:
+                    print(f"     Добавлен товар: || {product_name}")
+                except UnicodeEncodeError:
+                    print("Добавлен очередной товар (наименование не отображается из-за кодировки")
                 excel_file.save(filename=f"data/{count}_{category_name}/{subcategory_name}.xlsx")
                 count_product += 1
             if count_product == len_products:
